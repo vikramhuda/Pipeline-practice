@@ -1,0 +1,91 @@
+name: Terraform CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+
+  # =========================================
+  # STAGE 1 - TERRAFORM PLAN
+  # =========================================
+  terraform-plan:
+
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./parent module
+
+    steps:
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: |
+            {
+              "clientId": "0443188f-33ef-410a-9f93-cc7af1d5a04a",
+              "clientSecret": "7fI8Q~uz52oeP-.ho6Bhy3qUER3OdDNJvIIA0cMq",
+              "subscriptionId": "f506e9ea-7a47-4c62-82ac-24efcf83b366",
+              "tenantId": "44ff9492-6357-4790-9759-8d5b4666c643"
+            }
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Format
+        run: terraform fmt
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
+
+  # =========================================
+  # STAGE 2 - ACTIVATION / APPLY
+  # =========================================
+  terraform-activation:
+
+    needs: terraform-plan
+
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./parent module
+
+    steps:
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: |
+            {
+              "clientId": "0443188f-33ef-410a-9f93-cc7af1d5a04a",
+              "clientSecret": "7fI8Q~uz52oeP-.ho6Bhy3qUER3OdDNJvIIA0cMq",
+              "subscriptionId": "f506e9ea-7a47-4c62-82ac-24efcf83b366",
+              "tenantId": "44ff9492-6357-4790-9759-8d5b4666c643"
+            }
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
